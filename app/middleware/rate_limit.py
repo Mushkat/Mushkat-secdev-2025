@@ -1,16 +1,21 @@
+import os
 import time
 from collections import defaultdict
 
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from ..core.exceptions import ProblemDetailsException
+from ..core.exceptions import APIError
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, limits: dict = None):
+    def __init__(self, app, limits: dict = None, disable: bool | None = None):
         super().__init__(app)
         self.requests = defaultdict(list)
+        if disable is None:
+            self.disabled = os.getenv("DISABLE_RATE_LIMIT", "0") == "1"
+        else:
+            self.disabled = disable
 
         self.default_limits = {
             "global": {"max_requests": 1000, "window": 3600},
@@ -23,11 +28,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             self.default_limits.update(limits)
 
     async def dispatch(self, request: Request, call_next):
+        if self.disabled:
+            return await call_next(request)
+
         client_ip = request.client.host
         current_time = time.time()
-        path = request.url.path
-
-        endpoint_type = self._get_endpoint_type(path)
+        endpoint_type = self._get_endpoint_type(request)
         limits = self.default_limits.get(endpoint_type, self.default_limits["global"])
 
         max_requests = limits["max_requests"]
@@ -44,10 +50,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if len(self.requests[key]) >= max_requests:
             retry_after = int(window - (current_time - self.requests[key][0]))
 
-            raise ProblemDetailsException(
+            raise APIError(
                 status_code=429,
+                code="RATE_LIMIT_EXCEEDED",
+                title="Превышен лимит запросов",
                 detail=f"Слишком много запросов. Лимит: {max_requests} в {window} секунд",
-                title="Too Many Requests",
+                errors={"retry_after": retry_after},
                 headers={"Retry-After": str(retry_after)},
             )
 
@@ -56,13 +64,17 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
 
-    def _get_endpoint_type(self, path: str) -> str:
+    def _get_endpoint_type(self, request: Request) -> str:
         """Определяет тип эндпоинта для применения соответствующих лимитов"""
-        if "/auth/login" in path or "/auth/register" in path:
+        path = request.url.path
+        method = request.method.upper()
+        if path.startswith("/api/v1/auth/login") or path.startswith(
+            "/api/v1/auth/register"
+        ):
             return "auth"
-        elif "/bookings" in path and "POST" in path:
+        elif path.startswith("/api/v1/bookings") and method == "POST":
             return "bookings"
-        elif "/availability" in path:
+        elif path.startswith("/api/v1/availability"):
             return "availability"
         else:
             return "global"
