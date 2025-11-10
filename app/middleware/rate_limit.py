@@ -42,9 +42,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key = f"{endpoint_type}:{client_ip}"
 
         self.requests[key] = [
-            req_time
-            for req_time in self.requests[key]
-            if current_time - req_time < window
+            req_time for req_time in self.requests[key] if current_time - req_time < window
         ]
 
         if len(self.requests[key]) >= max_requests:
@@ -68,9 +66,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         """Определяет тип эндпоинта для применения соответствующих лимитов"""
         path = request.url.path
         method = request.method.upper()
-        if path.startswith("/api/v1/auth/login") or path.startswith(
-            "/api/v1/auth/register"
-        ):
+        if path.startswith("/api/v1/auth/login") or path.startswith("/api/v1/auth/register"):
             return "auth"
         elif path.startswith("/api/v1/bookings") and method == "POST":
             return "bookings"

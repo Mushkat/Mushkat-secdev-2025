@@ -9,16 +9,12 @@ class RateLimiter:
     def __init__(self):
         self.requests = defaultdict(list)
 
-    async def check_rate_limit(
-        self, request: Request, max_requests: int = 10, window: int = 60
-    ):
+    async def check_rate_limit(self, request: Request, max_requests: int = 10, window: int = 60):
         client_ip = request.client.host
         current_time = time.time()
 
         self.requests[client_ip] = [
-            req_time
-            for req_time in self.requests[client_ip]
-            if current_time - req_time < window
+            req_time for req_time in self.requests[client_ip] if current_time - req_time < window
         ]
 
         if len(self.requests[client_ip]) >= max_requests:

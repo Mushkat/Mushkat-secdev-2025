@@ -97,7 +97,4 @@ def test_booking_validation_rejects_past_date(client, user_factory):
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     payload = response.json()
     assert payload["code"] == "VALIDATION_ERROR"
-    assert any(
-        "Дата бронирования" in message
-        for message in payload["errors"]["body.booking_date"]
-    )
+    assert any("Дата бронирования" in message for message in payload["errors"]["body.booking_date"])

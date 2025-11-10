@@ -25,9 +25,7 @@ class UserCreate(BaseModel):
             )
 
         if len(value.encode("utf-8")) > 72:
-            raise ValueError(
-                "Пароль после UTF-8 кодирования не может превышать 72 байта"
-            )
+            raise ValueError("Пароль после UTF-8 кодирования не может превышать 72 байта")
 
         return value
 

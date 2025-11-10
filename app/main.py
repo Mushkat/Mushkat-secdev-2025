@@ -20,9 +20,7 @@ exception_handlers = {
     Exception: unhandled_exception_handler,
 }
 
-app = FastAPI(
-    title="Parking slots App", version="0.1.0", exception_handlers=exception_handlers
-)
+app = FastAPI(title="Parking slots App", version="0.1.0", exception_handlers=exception_handlers)
 
 
 @app.on_event("startup")

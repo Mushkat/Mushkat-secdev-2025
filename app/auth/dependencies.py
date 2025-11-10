@@ -26,9 +26,7 @@ async def get_current_user(
     conn: Connection = Depends(get_db),
 ):
     if credentials is None:
-        raise _auth_error(
-            "Требуется аутентификация", "Для доступа необходим Bearer токен"
-        )
+        raise _auth_error("Требуется аутентификация", "Для доступа необходим Bearer токен")
 
     token = credentials.credentials
     payload = verify_token(token)
@@ -53,9 +51,7 @@ async def get_current_user(
         (int(user_id),),
     ).fetchone()
     if row is None:
-        raise _auth_error(
-            "Пользователь не найден", "Учетная запись была удалена или не существует"
-        )
+        raise _auth_error("Пользователь не найден", "Учетная запись была удалена или не существует")
 
     user = dict(row)
     request.state.user = {

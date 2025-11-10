@@ -16,9 +16,7 @@ def test_create_item_and_paginate(client, user_factory):
         created_ids.append(body["id"])
         assert body["owner_id"] > 0
 
-    list_response = client.get(
-        "/api/v1/items", headers=headers, params={"limit": 2, "offset": 0}
-    )
+    list_response = client.get("/api/v1/items", headers=headers, params={"limit": 2, "offset": 0})
     assert list_response.status_code == HTTPStatus.OK
     payload = list_response.json()
     assert payload["total"] == 3
@@ -26,9 +24,7 @@ def test_create_item_and_paginate(client, user_factory):
     assert payload["offset"] == 0
     assert [item["code"] for item in payload["items"]] == ["S0", "S1"]
 
-    second_page = client.get(
-        "/api/v1/items", headers=headers, params={"limit": 2, "offset": 2}
-    )
+    second_page = client.get("/api/v1/items", headers=headers, params={"limit": 2, "offset": 2})
     assert second_page.status_code == HTTPStatus.OK
     second_payload = second_page.json()
     assert second_payload["items"][0]["id"] == created_ids[2]
@@ -87,7 +83,5 @@ def test_item_access_restricted_to_owner_or_admin(client, user_factory):
     assert update.status_code == HTTPStatus.OK
     assert update.json()["description"] == "Updated"
 
-    delete_response = client.delete(
-        f"/api/v1/items/{item['id']}", headers=admin_headers
-    )
+    delete_response = client.delete(f"/api/v1/items/{item['id']}", headers=admin_headers)
     assert delete_response.status_code == HTTPStatus.NO_CONTENT

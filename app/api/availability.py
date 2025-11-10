@@ -14,9 +14,7 @@ router = APIRouter()
 
 @router.get("/availability", response_model=AvailabilityResponse)
 async def get_availability(
-    target_date: date = Query(
-        ..., description="Дата, для которой рассчитывается доступность"
-    ),
+    target_date: date = Query(..., description="Дата, для которой рассчитывается доступность"),
     code: str | None = Query(None, description="Фильтр по коду парковочного места"),
     _: dict = Depends(get_current_user),
     conn: Connection = Depends(get_db),

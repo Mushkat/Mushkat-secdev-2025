@@ -26,14 +26,10 @@ from app.main import app  # noqa: E402
 
 
 class _SimpleResponse:
-    def __init__(
-        self, status_code: int, body: bytes, headers: Iterable[Tuple[bytes, bytes]]
-    ):
+    def __init__(self, status_code: int, body: bytes, headers: Iterable[Tuple[bytes, bytes]]):
         self.status_code = status_code
         self._body = body
-        self.headers = {
-            key.decode("latin-1"): value.decode("latin-1") for key, value in headers
-        }
+        self.headers = {key.decode("latin-1"): value.decode("latin-1") for key, value in headers}
 
     def json(self) -> Any:
         if not self._body:
@@ -77,8 +73,7 @@ class SimpleASGITestClient:
             body = data
 
         raw_headers = [
-            (key.encode("latin-1"), value.encode("latin-1"))
-            for key, value in send_headers.items()
+            (key.encode("latin-1"), value.encode("latin-1")) for key, value in send_headers.items()
         ]
         scope = {
             "type": "http",
@@ -113,9 +108,7 @@ class SimpleASGITestClient:
         await self.app(scope, receive, send)
 
         status_code = response_data.get("status", 500)
-        return _SimpleResponse(
-            status_code, response_data["body"], response_data["headers"]
-        )
+        return _SimpleResponse(status_code, response_data["body"], response_data["headers"])
 
     def request(self, method: str, url: str, **kwargs: Any) -> _SimpleResponse:
         json_data = kwargs.pop("json", None)

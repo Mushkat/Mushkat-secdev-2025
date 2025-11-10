@@ -42,9 +42,7 @@ class APIError(HTTPException):
         self.detail = detail or title
         self.errors = _normalize_errors(errors)
         self.headers = dict(headers or {})
-        super().__init__(
-            status_code=status_code, detail=self.detail, headers=self.headers
-        )
+        super().__init__(status_code=status_code, detail=self.detail, headers=self.headers)
 
 
 def _build_problem(

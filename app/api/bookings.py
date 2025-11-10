@@ -42,9 +42,7 @@ async def list_bookings(
     return [dict(row) for row in rows]
 
 
-@router.post(
-    "/bookings", response_model=BookingRead, status_code=status.HTTP_201_CREATED
-)
+@router.post("/bookings", response_model=BookingRead, status_code=status.HTTP_201_CREATED)
 async def create_booking(
     booking_data: BookingCreate,
     current_user: dict = Depends(get_current_user),
@@ -140,10 +138,7 @@ async def get_booking(
             title="Недостаточно прав",
             detail="Недостаточно прав для просмотра бронирования",
         )
-    return {
-        key: record[key]
-        for key in ("id", "slot_id", "user_id", "booking_date", "status")
-    }
+    return {key: record[key] for key in ("id", "slot_id", "user_id", "booking_date", "status")}
 
 
 @router.put("/bookings/{booking_id}", response_model=BookingRead)

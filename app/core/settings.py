@@ -21,7 +21,6 @@ def _parse_env_line(line: str) -> tuple[str, str] | None:
 
 
 def ensure_settings_loaded() -> None:
-
     global _ENV_LOADED
     if _ENV_LOADED:
         return
@@ -39,7 +38,6 @@ def ensure_settings_loaded() -> None:
 
 
 def get_required_setting(name: str) -> str:
-
     ensure_settings_loaded()
     value = os.getenv(name)
     if value is None:

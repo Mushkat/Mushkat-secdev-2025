@@ -44,9 +44,7 @@ async def create_item(
     current_user: dict = Depends(get_current_user),
     conn: Connection = Depends(get_db),
 ):
-    existing = conn.execute(
-        "SELECT id FROM slots WHERE code = ?", (item_data.code,)
-    ).fetchone()
+    existing = conn.execute("SELECT id FROM slots WHERE code = ?", (item_data.code,)).fetchone()
     if existing:
         raise APIError(
             status_code=409,
