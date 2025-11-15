@@ -4,6 +4,10 @@ select = ["E","F","W","I"]
 target-version = "py311"
 exclude = ["venv",".venv","build","dist"]
 
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
 [tool.isort]
 profile = "black"
 line_length = 100
