@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  python-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,3 +36,81 @@ jobs:
 
       - name: Pre-commit (all files)
         run: pre-commit run --all-files
+
+  container-security:
+    runs-on: ubuntu-latest
+    needs: python-tests
+    env:
+      JWT_SECRET_KEY: jwt-secret-ci-demo-key-0123456789012345678901234567
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare compose env
+        run: |
+          cp .env.example .env
+          sed -i "s|JWT_SECRET_KEY=replace-with-a-strong-secret|JWT_SECRET_KEY=${JWT_SECRET_KEY}|" .env
+
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: Docker Compose build
+        run: docker compose build --pull
+
+      - name: Docker Compose up
+        run: docker compose up -d
+
+      - name: Show compose status
+        run: docker compose ps
+
+      - name: Wait for healthy container & smoke test
+        run: |
+          set -euo pipefail
+          container_id=$(docker compose ps -q api)
+          for attempt in {1..10}; do
+            status=$(docker inspect --format '{{.State.Health.Status}}' "$container_id" || echo "starting")
+            echo "Attempt ${attempt}: status=${status}"
+            if [ "$status" = "healthy" ]; then
+              curl -fsS http://localhost:8000/health
+              break
+            fi
+            if [ "$attempt" -eq 10 ]; then
+              docker compose logs --no-color
+              echo "Container failed to become healthy"
+              exit 1
+            fi
+            sleep 5
+          done
+
+      - name: Ensure container runs as non-root
+        run: docker compose exec -T api python -c "import os, sys; sys.exit(0 if os.getuid() != 0 else 1)"
+
+      - name: Capture docker metadata
+        run: |
+          docker history --no-trunc parking-slots-api:local > docker-history.txt
+          docker images parking-slots-api:local > docker-images.txt
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: parking-slots-api:local
+          format: 'sarif'
+          output: 'trivy-report.sarif'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'
+
+      - name: Upload container artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-security-artifacts
+          path: |
+            docker-history.txt
+            docker-images.txt
+            trivy-report.sarif
+
+      - name: Docker Compose down
+        if: always()
+        run: docker compose down -v
