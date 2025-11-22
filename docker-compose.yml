@@ -20,7 +20,9 @@ services:
     cap_drop:
       - ALL
     security_opt:
-      - no-new-privileges:true
+      - "no-new-privileges=true"
+      - "seccomp=./app/security/seccomp-parking-slots.json"
+      - "apparmor=docker-default"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "scripts/healthcheck.py"]

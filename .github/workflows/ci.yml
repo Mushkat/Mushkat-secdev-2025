@@ -3,11 +3,14 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    - cron: "0 3 * * 1"
 permissions:
   contents: read
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
+
 
 jobs:
   python-tests:
@@ -64,6 +67,13 @@ jobs:
       - name: Show compose status
         run: docker compose ps
 
+      - name: Check security options (seccomp & AppArmor)
+        run: |
+          set -euo pipefail
+          container_id=$(docker compose ps -q api)
+          docker inspect "$container_id" \
+            --format 'SecurityOpt={{json .HostConfig.SecurityOpt}} AppArmor={{.AppArmorProfile}}'
+
       - name: Wait for healthy container & smoke test
         run: |
           set -euo pipefail
@@ -93,6 +103,8 @@ jobs:
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.20.0
+        env:
+          TRIVY_IGNOREFILE: .trivyignore
         with:
           image-ref: parking-slots-api:local
           format: 'sarif'

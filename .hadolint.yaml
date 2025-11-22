@@ -1,0 +1,8 @@
+ignored:
+  - DL3008   # Pin versions in apt-get install
+
+override:
+  error:
+    - DL3003   # Use WORKDIR to switch to a directory
+  warning:
+    - DL3007   # Using latest is prone to errors if the image will ever update
