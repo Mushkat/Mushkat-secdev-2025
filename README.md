@@ -1,6 +1,3 @@
-+76
--74
-
 # Parking Slots API
 
 Минимально жизнеспособный сервис бронирования парковочных мест. Реализация соответствует требованиям курса P06 — Secure Coding: входные данные валидируются строгими схемами, ошибки возвращаются в формате RFC 7807 с `correlation_id`, все SQL-запросы параметризованы, а секреты и лимиты читаются из переменных окружения.
@@ -72,6 +69,42 @@ docker compose up --build
 pytest -q
 ```
 > Для локальной разработки можно отключить rate-limit, установив `DISABLE_RATE_LIMIT=1`. JWT секрет должен быть не короче 32 символов.
+
+## Контейнеризация и харднинг
+
+### Что внутри Dockerfile
+- multi-stage сборка на `python:3.12.3-slim` с отдельными стадиями `deps` (зависимости), `tester` (pytest) и `runtime`;
+- runtime-образ содержит только prod-зависимости, файловую систему `/app` в режиме read-only и том `/data` для SQLite;
+- пользователь `app` без root-прав, `cap_drop: ALL`, `no-new-privileges`, healthcheck через `scripts/healthcheck.py`.
+
+### Сборка и запуск локально
+```bash
+docker compose build --pull --no-cache
+docker compose up -d
+docker compose ps
+curl -f http://localhost:8000/health
+```
+
+Полезные проверки:
+- убедиться, что процесс не под root: `docker compose exec api id -u` (должен вернуть `1000+`);
+- убедиться, что healthcheck перешёл в `healthy`: `docker inspect --format '{{.State.Health.Status}}' $(docker compose ps -q api)`;
+- посмотреть размер и слои образа:
+  ```bash
+  docker images parking-slots-api:local
+  docker history parking-slots-api:local
+  ```
+- остановить сервис: `docker compose down -v`.
+
+### CI-проверки
+- Job `container-security` в `.github/workflows/ci.yml` последовательно запускает `hadolint`, `docker build`, проверку `id -u`, healthcheck контейнера и `trivy`;
+- отчёты `trivy-report.sarif`, `docker-history.txt`, `docker-images.txt` публикуются артефактами GitHub Actions для вложения в PR (C1/C4);
+- команды для локальной проверки линтера Dockerfile: `docker run --rm -i hadolint/hadolint < Dockerfile`;
+- для сканирования образа локально можно использовать `trivy image parking-slots-api:local`.
+
+### Compose-окружение (C3–C5)
+- `docker-compose.yml` описывает сервис `api` и том `app-data` с ограничениями (read-only rootfs, tmpfs для `/tmp`);
+- `.env` содержит все необходимые переменные (`JWT_SECRET_KEY`, `DATABASE_URL`, лимиты). Значение по умолчанию записывает БД в `/data` и монтирует его как volume;
+- процесс CI поднимает контейнер, проверяет `/health` и выгружает логи, что демонстрирует готовность сервисов для локального запуска/ревью.
 
 ## Архитектура
 - FastAPI + встроенный SQLite (`sqlite:///parking.db` по умолчанию, путь можно задать через `DATABASE_URL`).
