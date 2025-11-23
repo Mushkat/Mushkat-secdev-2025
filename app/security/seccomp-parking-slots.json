@@ -1,0 +1,27 @@
+{
+  "defaultAction": "SCMP_ACT_ALLOW",
+  "archMap": [
+    {
+      "architecture": "SCMP_ARCH_X86_64",
+      "subArchitectures": [
+        "SCMP_ARCH_X86"
+      ]
+    }
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "kexec_load",
+        "open_by_handle_at",
+        "init_module",
+        "finit_module",
+        "delete_module",
+        "ptrace",
+        "userfaultfd",
+        "perf_event_open",
+        "unshare"
+      ],
+      "action": "SCMP_ACT_ERRNO"
+    }
+  ]
+}
