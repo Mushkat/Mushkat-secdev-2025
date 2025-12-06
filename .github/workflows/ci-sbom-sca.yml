@@ -42,6 +42,14 @@ jobs:
             ghcr.io/anchore/grype:v0.104.1 \
             sbom:/work/EVIDENCE/P09/sbom.json -o json > EVIDENCE/P09/sca_report.json
 
+      - name: SCA Scan (pip-audit demo)
+        run: |
+          python -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          pip install pip-audit
+          pip-audit -r requirements-sca-demo.txt --format=json > EVIDENCE/P09/pip_audit_report.json
+
       - name: Generate SCA summary markdown
         run: |
           python - << 'PY'
