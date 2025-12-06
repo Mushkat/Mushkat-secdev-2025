@@ -35,20 +35,11 @@ jobs:
             ghcr.io/anchore/syft:v1.38.0 \
             packages dir:. -o cyclonedx-json=EVIDENCE/P09/sbom.json
 
-      - name: SCA Scan (Grype)
+      - name: Run SCA (pip-audit)
         run: |
-          set -e
-          docker run --rm -v "$PWD":/work -w /work \
-            ghcr.io/anchore/grype:v0.104.1 \
-            sbom:/work/EVIDENCE/P09/sbom.json -o json > EVIDENCE/P09/sca_report.json
-
-      - name: SCA Scan (pip-audit demo)
-        run: |
-          python -m venv .venv
-          . .venv/bin/activate
-          pip install --upgrade pip
-          pip install pip-audit
-          pip-audit -r requirements-sca-demo.txt --format=json > EVIDENCE/P09/pip_audit_report.json
+          python -m pip install --upgrade pip
+          python -m pip install pip-audit
+          pip-audit -r requirements-sca-demo.txt --format=json > EVIDENCE/P09/sca_report.json
 
       - name: Generate SCA summary markdown
         run: |
@@ -60,13 +51,26 @@ jobs:
 
           report_path = Path("EVIDENCE/P09/sca_report.json")
           data = json.loads(report_path.read_text(encoding="utf-8"))
-          matches = data.get("matches", [])
 
+          deps = data.get("dependencies", [])
           sev_counts = collections.Counter()
-          for m in matches:
-              vuln = m.get("vulnerability") or {}
-              sev = vuln.get("severity") or "Unknown"
+          important = []
+
+          for dep in deps:
+            name = dep.get("name")
+            ver = dep.get("version")
+            for vuln in dep.get("vulns", []):
+              sev = "High"
               sev_counts[sev] += 1
+
+              aliases = vuln.get("aliases") or []
+              cve = None
+              for al in aliases:
+                if al.startswith("CVE-"):
+                  cve = al
+                  break
+              vid = cve or vuln.get("id")
+              important.append((name, ver, vid, sev))
 
           lines = []
           total = sum(sev_counts.values())
