@@ -35,11 +35,12 @@ jobs:
             ghcr.io/anchore/syft:v1.38.0 \
             packages dir:. -o cyclonedx-json=EVIDENCE/P09/sbom.json
 
-      - name: Run SCA (pip-audit)
+      - name: SCA Scan (Grype)
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pip-audit
-          pip-audit -r requirements-sca-demo.txt --format=json > EVIDENCE/P09/sca_report.json
+          set -e
+          docker run --rm -v "$PWD":/work -w /work \
+            ghcr.io/anchore/grype:v0.104.1 \
+            sbom:/work/EVIDENCE/P09/sbom.json -o json > EVIDENCE/P09/sca_report.json
 
       - name: Generate SCA summary markdown
         run: |
@@ -51,26 +52,13 @@ jobs:
 
           report_path = Path("EVIDENCE/P09/sca_report.json")
           data = json.loads(report_path.read_text(encoding="utf-8"))
+          matches = data.get("matches", [])
 
-          deps = data.get("dependencies", [])
           sev_counts = collections.Counter()
-          important = []
-
-          for dep in deps:
-            name = dep.get("name")
-            ver = dep.get("version")
-            for vuln in dep.get("vulns", []):
-              sev = "High"
+          for m in matches:
+              vuln = m.get("vulnerability") or {}
+              sev = vuln.get("severity") or "Unknown"
               sev_counts[sev] += 1
-
-              aliases = vuln.get("aliases") or []
-              cve = None
-              for al in aliases:
-                if al.startswith("CVE-"):
-                  cve = al
-                  break
-              vid = cve or vuln.get("id")
-              important.append((name, ver, vid, sev))
 
           lines = []
           total = sum(sev_counts.values())
@@ -81,10 +69,20 @@ jobs:
               if sev in sev_counts:
                   lines.append(f"- {sev}: {sev_counts[sev]}")
 
+          important = [
+              m for m in matches
+              if (m.get("vulnerability") or {}).get("severity") in ("Critical", "High")
+          ]
           if important:
               lines.append("\n## Ключевые уязвимости (Critical/High)\n")
-              for name, ver, vid, sev in important[:10]:
-                  lines.append(f"- {name}:{ver} — {vid} ({sev})")
+              for m in important[:10]:
+                  vuln = m.get("vulnerability") or {}
+                  art = m.get("artifact") or {}
+                  vid = vuln.get("id")
+                  sev = vuln.get("severity")
+                  pkg = art.get("name")
+                  ver = art.get("version")
+                  lines.append(f"- {pkg}:{ver} — {vid} ({sev})")
 
           sha = os.environ.get("GITHUB_SHA", "")
           run_url = os.environ.get("GITHUB_RUN_URL", "")
