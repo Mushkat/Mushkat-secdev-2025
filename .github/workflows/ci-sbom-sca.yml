@@ -81,27 +81,10 @@ jobs:
               if sev in sev_counts:
                   lines.append(f"- {sev}: {sev_counts[sev]}")
 
-          important = [
-              m for m in matches
-              if (m.get("vulnerability") or {}).get("severity") in ("Critical", "High")
-          ]
           if important:
               lines.append("\n## Ключевые уязвимости (Critical/High)\n")
-              for m in important[:10]:
-                  vuln = m.get("vulnerability") or {}
-                  art = m.get("artifact") or {}
-                  vid = vuln.get("id")
-                  sev = vuln.get("severity")
-                  pkg = art.get("name")
-                  ver = art.get("version")
-                  rel = (m.get("relatedVulnerabilities") or [])
-                  cve = None
-                  if rel:
-                      cve = rel[0].get("id")
-                  if cve:
-                      lines.append(f"- {pkg}:{ver} — {cve} ({sev})")
-                  else:
-                      lines.append(f"- {pkg}:{ver} — {vid} ({sev})")
+              for name, ver, vid, sev in important[:10]:
+                  lines.append(f"- {name}:{ver} — {vid} ({sev})")
 
           sha = os.environ.get("GITHUB_SHA", "")
           run_url = os.environ.get("GITHUB_RUN_URL", "")
