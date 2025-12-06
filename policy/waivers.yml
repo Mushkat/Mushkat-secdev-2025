@@ -1,14 +1,9 @@
-# policy/waivers.yml — шаблон файла исключений для SBOM & SCA
-# См. project/69_sbom-vuln-mgmt.md для описания политики.
-
-waivers: []
-# Пример записи:
-# waivers:
-#   - id: "CVE-2024-XXXX"
-#     package: "example-lib"
-#     version: "1.2.3"
-#     severity: "High"
-#     reason: "Транзитивная зависимость; нет фикса; компонент не в прод-цепочке."
-#     issue: "https://github.com/<org>/<repo>/issues/123"
-#     expires_at: "2025-12-31"
-#     approved_by: "tutor@example.org"
+waivers:
+  - id: "GHSA-q2q7-5pp4-w6pg"
+    package: "urllib3"
+    version: "1.26.4"
+    severity: "High"
+    reason: "Тестовая уязвимость; urllib3 не используется, входные URL в прод-пути не принимаются от пользователя."
+    issue: "https://github.com/Mushkat/Mushkat-secdev-2025/issues/9"
+    expires_at: "2025-12-07"
+    approved_by: "123@example.com"
