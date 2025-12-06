@@ -19,6 +19,8 @@ jobs:
   sbom_sca:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
     steps:
       - name: Checkout
@@ -30,14 +32,14 @@ jobs:
       - name: Generate SBOM (Syft CycloneDX)
         run: |
           docker run --rm -v "$PWD":/work -w /work \
-            anchore/syft:v0.104.0 \
-            packages dir:. -o cyclonedx-json > EVIDENCE/P09/sbom.json
+            ghcr.io/anchore/syft:v1.38.0 \
+            packages dir:. -o cyclonedx-json=EVIDENCE/P09/sbom.json
 
       - name: SCA Scan (Grype)
         run: |
           set -e
           docker run --rm -v "$PWD":/work -w /work \
-            anchore/grype:v0.77.0 \
+            ghcr.io/anchore/grype:v0.104.1 \
             sbom:/work/EVIDENCE/P09/sbom.json -o json > EVIDENCE/P09/sca_report.json
 
       - name: Generate SCA summary markdown
@@ -45,6 +47,7 @@ jobs:
           python - << 'PY'
           import json
           import collections
+          import os
           from pathlib import Path
 
           report_path = Path("EVIDENCE/P09/sca_report.json")
@@ -81,8 +84,25 @@ jobs:
                   ver = art.get("version")
                   lines.append(f"- {pkg}:{ver} — {vid} ({sev})")
 
+          sha = os.environ.get("GITHUB_SHA", "")
+          run_url = os.environ.get("GITHUB_RUN_URL", "")
+          lines.append("\n---\n")
+          if sha:
+              lines.append(f"Commit: `{sha}`")
+          if run_url:
+              lines.append(f"Workflow run: {run_url}")
+
           out_path = Path("EVIDENCE/P09/sca_summary.md")
           out_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+          meta = {
+              "commit": sha,
+              "run_url": run_url,
+              "workflow": os.environ.get("GITHUB_WORKFLOW", ""),
+              "job": os.environ.get("GITHUB_JOB", ""),
+          }
+          meta_path = Path("EVIDENCE/P09/metadata.json")
+          meta_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
           PY
 
       - name: Upload SBOM/SCA evidence
