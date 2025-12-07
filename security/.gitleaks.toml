@@ -11,7 +11,8 @@ tags = ["jwt", "secret", "env"]
 description = "Allowlist для известных ложных срабатываний"
 
 regexes = [
-  '''JWT_SECRET_KEY=jwt-secret-ci-demo-key-0123456789012345678901234567'''
+  '''JWT_SECRET_KEY=jwt-secret-ci-demo-key-0123456789012345678901234567''',
+  '''JWT_SECRET_KEY=replace-with-a-strong-secret\|JWT_SECRET_KEY=\${JWT_SECRET_KEY}\|" .env'''
 ]
 
 paths = [
