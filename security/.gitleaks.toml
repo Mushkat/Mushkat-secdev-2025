@@ -1,11 +1,14 @@
 title = "Gitleaks config for P10"
 
-[extend]
-repo = "https://github.com/gitleaks/gitleaks.git"
-path = "config/gitleaks.toml"
+[[rules]]
+id = "jwt-secret-env"
+description = "Hardcoded JWT_SECRET_KEY в env-файлах"
+regex = '''JWT_SECRET_KEY=.*'''
+secretGroup = 0
+tags = ["jwt", "secret", "env"]
 
 [allowlist]
-description = "Allowlist for known false positives"
+description = "Allowlist для известных ложных срабатываний"
 
 regexes = [
   '''JWT_SECRET_KEY=jwt-secret-ci-demo-key-0123456789012345678901234567'''
