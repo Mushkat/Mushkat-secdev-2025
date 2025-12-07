@@ -1,0 +1,15 @@
+title = "Gitleaks config for P10"
+
+[extend]
+repo = "https://github.com/gitleaks/gitleaks.git"
+path = "config/gitleaks.toml"
+
+[allowlist]
+description = "Allowlist for known false positives"
+
+regexes = [
+  '''JWT_SECRET_KEY=jwt-secret-ci-demo-key-0123456789012345678901234567'''
+]
+
+[allowlist.paths]
+regexes = ["^docs/.*"]
