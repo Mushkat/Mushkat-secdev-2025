@@ -99,15 +99,17 @@ jobs:
           mkdir -p EVIDENCE/P11
           chmod -R a+rwx EVIDENCE/P11
 
-      - name: Run OWASP ZAP baseline (Docker Hub)
+      - name: Run OWASP ZAP baseline
         run: |
           set -euo pipefail
 
-          ZAP_IMAGE="zaproxy/zap2docker-stable"
+          ZAP_IMAGE="owasp/zap2docker-stable"
 
           docker pull "${ZAP_IMAGE}"
 
-          set +e
+          mkdir -p EVIDENCE/P11
+          chmod -R a+rwx EVIDENCE/P11
+
           docker run --rm \
             --network host \
             -u "$(id -u):$(id -g)" \
@@ -120,14 +122,11 @@ jobs:
               -J /zap/wrk/EVIDENCE/P11/zap_baseline.json \
               -m 5 \
               -T 10 \
-            2>&1 | tee EVIDENCE/P11/zap_baseline.log
-          rc=${PIPESTATUS[0]}
-          set -e
+            2>&1 | tee EVIDENCE/P11/zap_baseline.log || true
 
           test -s EVIDENCE/P11/zap_baseline.html
           test -s EVIDENCE/P11/zap_baseline.json
 
-          exit 0
 
 
 
