@@ -94,20 +94,28 @@ jobs:
           set -euo pipefail
           curl -fsS "${TARGET_URL}/health"
 
+      - name: Ensure evidence dir perms
+        run: |
+          mkdir -p EVIDENCE/P11
+          chmod -R a+rwx EVIDENCE/P11
+
       - name: Run OWASP ZAP baseline
         run: |
           set -euo pipefail
           docker run --rm \
             --network host \
+            -u "$(id -u):$(id -g)" \
             -v "$PWD:/zap/wrk" \
+            -w /zap/wrk \
             ghcr.io/zaproxy/zap2docker-stable \
             zap-baseline.py \
               -t "${TARGET_URL}" \
-              -r EVIDENCE/P11/zap_baseline.html \
-              -J EVIDENCE/P11/zap_baseline.json \
+              -r /zap/wrk/EVIDENCE/P11/zap_baseline.html \
+              -J /zap/wrk/EVIDENCE/P11/zap_baseline.json \
               -m 5 \
               -T 10 \
-            || true
+            2>&1 | tee EVIDENCE/P11/zap_baseline.log || true
+
 
       - name: Generate ZAP summary (markdown)
         run: |
