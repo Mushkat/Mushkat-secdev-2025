@@ -1,4 +1,4 @@
-name: Security - DAST
+name: Security - DAST (OWASP ZAP Baseline)
 
 on:
   workflow_dispatch:
@@ -9,6 +9,7 @@ on:
       - "docker-compose.yml"
       - "scripts/**"
       - ".github/workflows/ci-p11-dast.yml"
+      - ".env.example"
 
 permissions:
   contents: read
@@ -24,7 +25,7 @@ jobs:
     env:
       TARGET_URL: http://localhost:8000
       HEALTH_URL: http://localhost:8000/health
-      GITHUB_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      JWT_SECRET_KEY: jwt-secret-ci-demo-key-0123456789012345678901234567
 
     steps:
       - name: Checkout
@@ -33,32 +34,58 @@ jobs:
       - name: Ensure evidence dir
         run: mkdir -p EVIDENCE/P11
 
-      - name: Prepare .env for compose (if missing)
+      - name: Write CI debug metadata
+        run: |
+          {
+            echo "# P11 CI debug"
+            echo
+            echo "Commit: \`${GITHUB_SHA}\`"
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "Target: ${TARGET_URL}"
+          } > EVIDENCE/P11/ci_debug.md
+
+      - name: Prepare .env for compose (CI)
         run: |
           set -euo pipefail
-          if [ -f .env.example ] && [ ! -f .env ]; then
+
+          if [ -f .env.example ]; then
             cp .env.example .env
+          else
+            : > .env
           fi
+
+          if grep -q '^JWT_SECRET_KEY=' .env; then
+            sed -i "s/^JWT_SECRET_KEY=.*/JWT_SECRET_KEY=${JWT_SECRET_KEY}/" .env
+          else
+            echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}" >> .env
+          fi
+
+          if ! grep -q '^DATABASE_URL=' .env; then
+            echo "DATABASE_URL=sqlite:////data/parking.db" >> .env
+          fi
+
+          echo "Prepared .env (keys only):"
+          grep -E '^(JWT_SECRET_KEY|DATABASE_URL)=' .env | sed 's/JWT_SECRET_KEY=.*/JWT_SECRET_KEY=***masked***/'
 
       - name: Build & start service (docker compose)
         run: |
           set -euo pipefail
           docker compose up -d --build
+          docker compose ps
 
       - name: Wait for service readiness (healthcheck)
         run: |
           set -euo pipefail
           echo "Waiting for ${HEALTH_URL}..."
-          for i in {1..30}; do
+          for i in {1..40}; do
             if curl -fsS "${HEALTH_URL}" > /dev/null; then
               echo "Service is ready"
               exit 0
             fi
-            echo "Attempt ${i}/30: not ready yet"
+            echo "Attempt ${i}/40: not ready yet"
             sleep 3
           done
           echo "Service did not become ready in time"
-          docker compose ps
           docker compose logs --no-color
           exit 1
 
@@ -82,7 +109,6 @@ jobs:
               -T 10 \
             || true
 
-
       - name: Generate ZAP summary (markdown)
         run: |
           python - << 'PY'
@@ -93,90 +119,73 @@ jobs:
           report_path = evidence / "zap_baseline.json"
           out_path = evidence / "zap_summary.md"
 
-          def count_alerts(d):
+          def collect_alerts(d):
             alerts = []
             if isinstance(d, dict):
-              if "site" in d:
-                for s in d.get("site", []):
+              if isinstance(d.get("site"), list):
+                for s in d["site"]:
                   alerts += s.get("alerts", []) or []
-              if "alerts" in d and isinstance(d["alerts"], list):
+              if isinstance(d.get("alerts"), list):
                 alerts += d["alerts"]
             return alerts
 
-          summary = []
-          summary.append("# ZAP baseline summary\n")
-
-          total = 0
           sev = {"High": 0, "Medium": 0, "Low": 0, "Informational": 0, "Unknown": 0}
+          total = 0
           top = []
+
+          lines = ["# ZAP baseline summary", ""]
+          lines.append(f"**Target:** `{os.environ.get('TARGET_URL','')}`")
 
           if report_path.exists():
             try:
               data = json.loads(report_path.read_text(encoding="utf-8"))
-              alerts = count_alerts(data)
+              alerts = collect_alerts(data)
               total = len(alerts)
-
               for a in alerts:
                 risk = (a.get("risk") or a.get("riskdesc") or "").strip()
-                if risk:
-                  risk = risk.split()[0]
+                risk = risk.split()[0] if risk else "Unknown"
                 if risk not in sev:
                   risk = "Unknown"
                 sev[risk] += 1
-
               for a in alerts[:5]:
                 name = a.get("name") or a.get("alert") or "Unknown alert"
                 risk = (a.get("risk") or a.get("riskdesc") or "").strip()
-                if risk:
-                  risk = risk.split()[0]
-                if not risk:
-                  risk = "Unknown"
+                risk = risk.split()[0] if risk else "Unknown"
                 top.append((risk, name))
-
             except Exception as e:
-              summary.append(f"Не удалось распарсить zap_baseline.json: {e}\n")
+              lines += ["", f"Не удалось распарсить zap_baseline.json: {e}"]
           else:
-            summary.append("Отчёт zap_baseline.json не найден.\n")
+            lines += ["", "Отчёт zap_baseline.json не найден."]
 
-          summary.append(f"**Target:** `{os.environ.get('TARGET_URL','')}`")
-          summary.append(f"**Всего алертов:** {total}\n")
-          summary.append("## Распределение по severity\n")
-          summary.append(f"- High: {sev['High']}")
-          summary.append(f"- Medium: {sev['Medium']}")
-          summary.append(f"- Low: {sev['Low']}")
-          summary.append(f"- Informational: {sev['Informational']}")
-          summary.append(f"- Unknown: {sev['Unknown']}\n")
+          lines += ["", f"**Всего алертов:** {total}", "", "## Распределение по severity", ""]
+          lines += [f"- High: {sev['High']}", f"- Medium: {sev['Medium']}", f"- Low: {sev['Low']}",
+                    f"- Informational: {sev['Informational']}", f"- Unknown: {sev['Unknown']}", ""]
 
           if top:
-            summary.append("## Примеры алертов (первые 5)\n")
-            for risk, name in top:
-              summary.append(f"- {risk}: {name}")
-            summary.append("")
+            lines += ["## Примеры алертов (первые 5)", ""]
+            lines += [f"- {r}: {n}" for r, n in top]
+            lines.append("")
 
-          sha = os.environ.get("GITHUB_SHA", "")
-          run_url = os.environ.get("GITHUB_RUN_URL", "")
-          summary.append("---")
-          if sha:
-            summary.append(f"Commit: `{sha}`")
-          if run_url:
-            summary.append(f"Workflow run: {run_url}")
-          summary.append("")
+          lines += ["---",
+                    f"Commit: `{os.environ.get('GITHUB_SHA','')}`",
+                    f"Run: {os.environ.get('GITHUB_SERVER_URL','')}/{os.environ.get('GITHUB_REPOSITORY','')}/actions/runs/{os.environ.get('GITHUB_RUN_ID','')}",
+                    ""]
 
-          out_path.write_text("\n".join(summary), encoding="utf-8")
+          out_path.write_text("\n".join(lines), encoding="utf-8")
           PY
 
-      - name: Upload ZAP evidence
+      - name: Collect compose logs
+        if: always()
+        run: |
+          docker compose ps || true
+          docker compose logs --no-color > EVIDENCE/P11/compose.log || true
+
+      - name: Upload P11 evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: P11_EVIDENCE
           path: EVIDENCE/P11
-
-      - name: Show compose status & logs
-        if: always()
-        run: |
-          docker compose ps || true
-          docker compose logs --no-color || true
 
       - name: Docker Compose down
         if: always()
