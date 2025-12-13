@@ -8,11 +8,12 @@ on:
       - "Dockerfile"
       - "docker-compose.yml"
       - "scripts/**"
-      - ".github/workflows/ci-p11-dast.yml"
       - ".env.example"
+      - ".github/workflows/ci-p11-dast.yml"
 
 permissions:
   contents: read
+  packages: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -21,11 +22,17 @@ concurrency:
 jobs:
   dast_zap:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
+
     env:
-      TARGET_URL: http://localhost:8000
+      BASE_URL: http://localhost:8000
       HEALTH_URL: http://localhost:8000/health
+
       JWT_SECRET_KEY: jwt-secret-ci-demo-key-0123456789012345678901234567
+
+      ZAP_TARGET: http://localhost:8000/docs
+
+      ZAP_IMAGE: ghcr.io/zaproxy/zaproxy:stable
 
     steps:
       - name: Checkout
@@ -41,7 +48,9 @@ jobs:
             echo
             echo "Commit: \`${GITHUB_SHA}\`"
             echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-            echo "Target: ${TARGET_URL}"
+            echo "BASE_URL: ${BASE_URL}"
+            echo "ZAP_TARGET: ${ZAP_TARGET}"
+            echo "ZAP_IMAGE: ${ZAP_IMAGE}"
           } > EVIDENCE/P11/ci_debug.md
 
       - name: Prepare .env for compose (CI)
@@ -85,31 +94,35 @@ jobs:
             echo "Attempt ${i}/40: not ready yet"
             sleep 3
           done
-          echo "Service did not become ready in time"
+          echo "Service did not become ready"
           docker compose logs --no-color
           exit 1
 
-      - name: Smoke test target
+      - name: Smoke test base endpoints
         run: |
           set -euo pipefail
-          curl -fsS "${TARGET_URL}/health"
+          curl -fsS "${BASE_URL}/health" > /dev/null
+          curl -fsS "${BASE_URL}/docs" > /dev/null || true
 
-      - name: Ensure evidence dir perms
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull ZAP image (GHCR)
         run: |
-          mkdir -p EVIDENCE/P11
-          chmod -R a+rwx EVIDENCE/P11
+          set -euo pipefail
+          docker pull "${ZAP_IMAGE}"
 
       - name: Run OWASP ZAP baseline
         run: |
           set -euo pipefail
-
-          ZAP_IMAGE="owasp/zap2docker-stable"
-
-          docker pull "${ZAP_IMAGE}"
-
           mkdir -p EVIDENCE/P11
           chmod -R a+rwx EVIDENCE/P11
 
+          set +e
           docker run --rm \
             --network host \
             -u "$(id -u):$(id -g)" \
@@ -117,18 +130,16 @@ jobs:
             -w /zap/wrk \
             "${ZAP_IMAGE}" \
             zap-baseline.py \
-              -t "${TARGET_URL}" \
+              -t "${ZAP_TARGET}" \
               -r /zap/wrk/EVIDENCE/P11/zap_baseline.html \
               -J /zap/wrk/EVIDENCE/P11/zap_baseline.json \
-              -m 5 \
-              -T 10 \
-            2>&1 | tee EVIDENCE/P11/zap_baseline.log || true
+              -m 8 \
+              -T 15 \
+            2>&1 | tee EVIDENCE/P11/zap_baseline.log
+          set -e
 
           test -s EVIDENCE/P11/zap_baseline.html
           test -s EVIDENCE/P11/zap_baseline.json
-
-
-
 
       - name: Generate ZAP summary (markdown)
         run: |
@@ -151,47 +162,47 @@ jobs:
             return alerts
 
           sev = {"High": 0, "Medium": 0, "Low": 0, "Informational": 0, "Unknown": 0}
-          total = 0
           top = []
+          total = 0
 
-          lines = ["# ZAP baseline summary", ""]
-          lines.append(f"**Target:** `{os.environ.get('TARGET_URL','')}`")
+          data = json.loads(report_path.read_text(encoding="utf-8"))
+          alerts = collect_alerts(data)
+          total = len(alerts)
 
-          if report_path.exists():
-            try:
-              data = json.loads(report_path.read_text(encoding="utf-8"))
-              alerts = collect_alerts(data)
-              total = len(alerts)
-              for a in alerts:
-                risk = (a.get("risk") or a.get("riskdesc") or "").strip()
-                risk = risk.split()[0] if risk else "Unknown"
-                if risk not in sev:
-                  risk = "Unknown"
-                sev[risk] += 1
-              for a in alerts[:5]:
-                name = a.get("name") or a.get("alert") or "Unknown alert"
-                risk = (a.get("risk") or a.get("riskdesc") or "").strip()
-                risk = risk.split()[0] if risk else "Unknown"
-                top.append((risk, name))
-            except Exception as e:
-              lines += ["", f"Не удалось распарсить zap_baseline.json: {e}"]
-          else:
-            lines += ["", "Отчёт zap_baseline.json не найден."]
+          for a in alerts:
+            risk = (a.get("risk") or a.get("riskdesc") or "").strip()
+            risk = risk.split()[0] if risk else "Unknown"
+            if risk not in sev:
+              risk = "Unknown"
+            sev[risk] += 1
 
-          lines += ["", f"**Всего алертов:** {total}", "", "## Распределение по severity", ""]
-          lines += [f"- High: {sev['High']}", f"- Medium: {sev['Medium']}", f"- Low: {sev['Low']}",
-                    f"- Informational: {sev['Informational']}", f"- Unknown: {sev['Unknown']}", ""]
+          for a in alerts[:5]:
+            name = a.get("name") or a.get("alert") or "Unknown alert"
+            risk = (a.get("risk") or a.get("riskdesc") or "").strip()
+            risk = risk.split()[0] if risk else "Unknown"
+            top.append((risk, name))
+
+          lines = []
+          lines.append("# ZAP baseline summary\n")
+          lines.append(f"**Target:** `{os.environ.get('ZAP_TARGET','')}`")
+          lines.append(f"**Всего алертов:** {total}\n")
+          lines.append("## Распределение по severity\n")
+          lines.append(f"- High: {sev['High']}")
+          lines.append(f"- Medium: {sev['Medium']}")
+          lines.append(f"- Low: {sev['Low']}")
+          lines.append(f"- Informational: {sev['Informational']}")
+          lines.append(f"- Unknown: {sev['Unknown']}\n")
 
           if top:
-            lines += ["## Примеры алертов (первые 5)", ""]
-            lines += [f"- {r}: {n}" for r, n in top]
+            lines.append("## Примеры алертов (первые 5)\n")
+            for r, n in top:
+              lines.append(f"- {r}: {n}")
             lines.append("")
 
-          lines += ["---",
-                    f"Commit: `{os.environ.get('GITHUB_SHA','')}`",
-                    f"Run: {os.environ.get('GITHUB_SERVER_URL','')}/{os.environ.get('GITHUB_REPOSITORY','')}/actions/runs/{os.environ.get('GITHUB_RUN_ID','')}",
-                    ""]
-
+          lines.append("---")
+          lines.append(f"Commit: `{os.environ.get('GITHUB_SHA','')}`")
+          lines.append(f"Run: {os.environ.get('GITHUB_SERVER_URL','')}/{os.environ.get('GITHUB_REPOSITORY','')}/actions/runs/{os.environ.get('GITHUB_RUN_ID','')}")
+          lines.append("")
           out_path.write_text("\n".join(lines), encoding="utf-8")
           PY
 
