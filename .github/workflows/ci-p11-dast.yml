@@ -99,22 +99,36 @@ jobs:
           mkdir -p EVIDENCE/P11
           chmod -R a+rwx EVIDENCE/P11
 
-      - name: Run OWASP ZAP baseline
+      - name: Run OWASP ZAP baseline (Docker Hub)
         run: |
           set -euo pipefail
+
+          ZAP_IMAGE="zaproxy/zap2docker-stable"
+
+          docker pull "${ZAP_IMAGE}"
+
+          set +e
           docker run --rm \
             --network host \
             -u "$(id -u):$(id -g)" \
             -v "$PWD:/zap/wrk" \
             -w /zap/wrk \
-            ghcr.io/zaproxy/zap2docker-stable \
+            "${ZAP_IMAGE}" \
             zap-baseline.py \
               -t "${TARGET_URL}" \
               -r /zap/wrk/EVIDENCE/P11/zap_baseline.html \
               -J /zap/wrk/EVIDENCE/P11/zap_baseline.json \
               -m 5 \
               -T 10 \
-            2>&1 | tee EVIDENCE/P11/zap_baseline.log || true
+            2>&1 | tee EVIDENCE/P11/zap_baseline.log
+          rc=${PIPESTATUS[0]}
+          set -e
+
+          test -s EVIDENCE/P11/zap_baseline.html
+          test -s EVIDENCE/P11/zap_baseline.json
+
+          exit 0
+
 
 
       - name: Generate ZAP summary (markdown)
