@@ -1,0 +1,204 @@
+api-1  | INFO:     Started server process [1]
+api-1  | INFO:     Waiting for application startup.
+api-1  | INFO:     Application startup complete.
+api-1  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+api-1  | INFO:     172.18.0.1:58164 - "GET /health HTTP/1.1" 200 OK
+api-1  | INFO:     127.0.0.1:44268 - "GET /health HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60796 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60808 - "GET /robots.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     127.0.0.1:46498 - "GET /health HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /8047204569361399211 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /WEB-INF/web.xml HTTP/1.1" 404 Not Found
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | INFO:     172.18.0.3:60802 - "GET /WEB-INF/applicationContext.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /docs?-s HTTP/1.1" 200 OK
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | INFO:     172.18.0.3:60802 - "POST /docs?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:60802 - "POST /docs?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs?class.module.classLoader.DefaultAssertionStatus=nonsense HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "POST /docs HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:60802 - "POST /docs HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:60802 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /computeMetadata/v1/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /computeMetadata/v1/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /opc/v1/instance/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /opc/v1/instance/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /metadata/instance HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs/ HTTP/1.1" 307 Temporary Redirect
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /trace.axd HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /elmah.axd HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /.htaccess HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /.env HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /zap7691606160416983364 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /actuator/health HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60808 - "GET /.zap1185576988375045462 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /actuator/health HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /lfm.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.idea/WebServers.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /config/databases.yml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /config/database.yml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.git/config HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.svn/entries HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.svn/wc.db HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /CVS/root HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /server-status HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /core HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /sftp-config.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /WS_FTP.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /ws_ftp.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /WS_FTP.INI HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /filezilla.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /sitemanager.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /FileZilla.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /winscp.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /WinSCP.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.DS_Store HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.php_cs.cache HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /DEADJOE HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /sites/default/private/files/backup_migrate/scheduled/test.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /app/etc/local.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /server.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /privatekey.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /myserver.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /key.pem HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /id_rsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /id_dsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.ssh/id_rsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.ssh/id_dsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /adminer.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /vb_test.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /CHANGELOG.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /sites/default/files/.ht.sqlite HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /composer.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /composer.lock HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /vim_settings.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /server-info HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /phpinfo.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /info.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /i.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /test.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /_wpeprivate/config.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /_framework/blazor.boot.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.hg HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /.bzr HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /._darcs HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /BitKeeper HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:60802 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "GET /robots.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /sitemap.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /6049744010189962386 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /WEB-INF/web.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /WEB-INF/applicationContext.xml HTTP/1.1" 404 Not Found
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | WARNING:  Invalid HTTP request received.
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs?-s HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "POST /docs?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:51810 - "POST /docs?-d+allow_url_include%3d1+-d+auto_prepend_file%3dphp://input HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs?class.module.classLoader.DefaultAssertionStatus=nonsense HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "POST /docs HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:51810 - "POST /docs HTTP/1.1" 405 Method Not Allowed
+api-1  | INFO:     172.18.0.3:51810 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /computeMetadata/v1/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /computeMetadata/v1/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /opc/v1/instance/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /opc/v1/instance/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /latest/meta-data/ HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /metadata/instance HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs/ HTTP/1.1" 307 Temporary Redirect
+api-1  | INFO:     172.18.0.3:51810 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51810 - "GET /elmah.axd HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /trace.axd HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /.htaccess HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /.env HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /zap2185863863669472590 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /actuator/health HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51810 - "GET /actuator/health HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.zap7887396096237078583 HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /lfm.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.idea/WebServers.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /config/databases.yml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /config/database.yml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.git/config HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.svn/entries HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.svn/wc.db HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /CVS/root HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /server-status HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /core HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /sftp-config.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /WS_FTP.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /ws_ftp.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /WS_FTP.INI HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /filezilla.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /sitemanager.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /FileZilla.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /winscp.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /WinSCP.ini HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.DS_Store HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.php_cs.cache HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /DEADJOE HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /sites/default/private/files/backup_migrate/scheduled/test.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /app/etc/local.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /server.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /privatekey.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /myserver.key HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /key.pem HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /id_rsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /id_dsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.ssh/id_rsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.ssh/id_dsa HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /adminer.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /vb_test.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /CHANGELOG.txt HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /sites/default/files/.ht.sqlite HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /composer.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /composer.lock HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /vim_settings.xml HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /server-info HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /phpinfo.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /info.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /i.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /test.php HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /_wpeprivate/config.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /_framework/blazor.boot.json HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.hg HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /.bzr HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /._darcs HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /BitKeeper HTTP/1.1" 404 Not Found
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK
+api-1  | INFO:     172.18.0.3:51858 - "GET /docs HTTP/1.1" 200 OK

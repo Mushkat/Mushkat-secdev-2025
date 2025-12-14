@@ -12,6 +12,7 @@ from app.core.exceptions import (
     validation_exception_handler,
 )
 from app.middleware.rate_limit import RateLimitMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 
 exception_handlers = {
     APIError: api_error_handler,
@@ -30,6 +31,7 @@ def on_startup() -> None:
 
 
 app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(items.router, prefix="/api/v1", tags=["items"])
