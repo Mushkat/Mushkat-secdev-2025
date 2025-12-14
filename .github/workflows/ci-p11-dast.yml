@@ -125,6 +125,7 @@ jobs:
           set +e
           docker run --rm \
             --network host \
+            -e HOME=/zap/wrk \
             -u "$(id -u):$(id -g)" \
             -v "$PWD:/zap/wrk" \
             -w /zap/wrk \
