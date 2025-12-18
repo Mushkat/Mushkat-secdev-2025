@@ -1,0 +1,29 @@
+rules:
+  - id: py-no-eval-exec
+    languages: [python]
+    message: "Использование eval/exec потенциально небезопасно. Перепиши без динамического исполнения."
+    severity: WARNING
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+    metadata:
+      category: security
+      cwe: "CWE-94: Improper Control of Generation of Code ('Code Injection')"
+
+  - id: py-no-debug-true
+    languages: [python]
+    message: "DEBUG=True в приложении. Для продакшна должен быть выключен."
+    severity: WARNING
+    pattern: "DEBUG = True"
+    metadata:
+      category: config
+      cwe: "CWE-16: Configuration"
+
+  - id: py-hardcoded-jwt-secret
+    languages: [python]
+    message: "Обнаружен хардкод JWT_SECRET_KEY. Вынеси секрет в окружение/секреты CI."
+    severity: ERROR
+    pattern: JWT_SECRET_KEY = "$SECRET"
+    metadata:
+      category: secrets
+      cwe: "CWE-798: Use of Hard-coded Credentials"
