@@ -167,14 +167,16 @@ jobs:
           lines.append("- `EVIDENCE/P12/trivy_report.json`")
           lines.append("")
 
+          hadolint_path = ev / "hadolint_report.json"
+          hadolint = read_json(hadolint_path, [])
+
           lines.append("## Hadolint")
-          if hc["findings"] is None:
-            lines.append("- (ошибка) отчёт не в формате list")
+          if isinstance(hadolint, list):
+              lines.append(f"- findings: {len(hadolint)}")
+              if len(hadolint) == 0:
+                  lines.append("- (ok) Dockerfile без замечаний Hadolint")
           else:
-            lines.append(f"- findings: {hc['findings']}")
-            if hc["levels"]:
-              for k, v in sorted(hc["levels"].items()):
-                lines.append(f"  - {k}: {v}")
+              lines.append("- (ошибка) hadolint_report.json должен быть list")
           lines.append("")
 
           lines.append("## Checkov")
