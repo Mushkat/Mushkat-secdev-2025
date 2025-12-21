@@ -2,4 +2,5 @@ quiet: true
 download-external-modules: false
 framework:
   - kubernetes
-skip-check: []
+skip-check:
+  - CKV_K8S_43

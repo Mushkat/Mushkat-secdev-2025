@@ -1,35 +1,46 @@
-apiVersion: apps/v1
-kind: Deployment
 metadata:
   name: parking-slots-api
-  labels:
-    app: parking-slots-api
+  namespace: parking-slots
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: parking-slots-api
   template:
     metadata:
       labels:
         app: parking-slots-api
     spec:
+      automountServiceAccountToken: false
       securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: api
           image: parking-slots-api:local
+          imagePullPolicy: Always
           ports:
             - name: http
               containerPort: 8000
-              protocol: TCP
-          env:
-            - name: DATABASE_URL
-              value: "sqlite:////data/parking.db"
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsNonRoot: true
-            readOnlyRootFilesystem: true
-            capabilities:
-              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
