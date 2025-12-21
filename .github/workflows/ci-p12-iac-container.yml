@@ -1,0 +1,189 @@
+name: Security - IaC & Container (P12)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "iac/**"
+      - "security/**"
+      - ".github/workflows/ci-p12-iac-container.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare evidence dir
+        run: mkdir -p EVIDENCE/P12
+
+      - name: Hadolint (Dockerfile)
+        run: |
+          docker run --rm \
+            -v "$PWD:/work" -w /work \
+            hadolint/hadolint:v2.14.0 \
+            hadolint --config security/hadolint.yaml --format json Dockerfile \
+            > EVIDENCE/P12/hadolint_report.json || true
+
+      - name: Checkov (IaC)
+        run: |
+          docker run --rm \
+            -v "$PWD:/work" -w /work \
+            bridgecrew/checkov:3.2.484 \
+            --config-file security/checkov.yaml \
+            -d iac \
+            -o json \
+            > EVIDENCE/P12/checkov_report.json || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      - name: Build runtime image (local)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runtime
+          tags: parking-slots-api:p12
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan (image)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: parking-slots-api:p12
+          format: json
+          output: EVIDENCE/P12/trivy_report.json
+          vuln-type: os,library
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          ignore-unfixed: false
+          exit-code: "0"
+
+      - name: Generate hardening summary
+        run: |
+          python - << 'PY'
+          import json
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          ev = Path("EVIDENCE/P12")
+          out = ev / "hardening_summary.md"
+
+          def load_json(p: Path):
+            try:
+              return json.loads(p.read_text(encoding="utf-8"))
+            except Exception:
+              return None
+
+          def hadolint_counts(doc):
+            if not isinstance(doc, list):
+              return {}
+            c = {}
+            for item in doc:
+              lvl = item.get("level", "unknown")
+              c[lvl] = c.get(lvl, 0) + 1
+            return c
+
+          def checkov_counts(doc):
+            if not isinstance(doc, dict):
+              return {}
+            failed = doc.get("results", {}).get("failed_checks", []) or []
+            passed = doc.get("results", {}).get("passed_checks", []) or []
+            skipped = doc.get("results", {}).get("skipped_checks", []) or []
+            return {"failed": len(failed), "passed": len(passed), "skipped": len(skipped)}
+
+          def trivy_counts(doc):
+            if not isinstance(doc, dict):
+              return {}
+            counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+            results = doc.get("Results", []) or []
+            for r in results:
+              vulns = r.get("Vulnerabilities") or []
+              for v in vulns:
+                sev = (v.get("Severity") or "UNKNOWN").upper()
+                counts[sev] = counts.get(sev, 0) + 1
+            return counts
+
+          hadolint = load_json(ev / "hadolint_report.json")
+          checkov = load_json(ev / "checkov_report.json")
+          trivy = load_json(ev / "trivy_report.json")
+
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+          sha = "${{ github.sha }}"
+          run_url = "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          lines = []
+          lines.append("# P12 Hardening summary")
+          lines.append("")
+          lines.append(f"- Commit: `{sha}`")
+          lines.append(f"- Run: {run_url}")
+          lines.append(f"- Generated: {now}")
+          lines.append("")
+          lines.append("## Reports")
+          lines.append(f"- `EVIDENCE/P12/hadolint_report.json`")
+          lines.append(f"- `EVIDENCE/P12/checkov_report.json`")
+          lines.append(f"- `EVIDENCE/P12/trivy_report.json`")
+          lines.append("")
+
+          hc = hadolint_counts(hadolint)
+          cc = checkov_counts(checkov)
+          tc = trivy_counts(trivy)
+
+          lines.append("## Hadolint")
+          if hc:
+            for k, v in sorted(hc.items()):
+              lines.append(f"- {k}: {v}")
+          else:
+            lines.append("- (не удалось распарсить отчёт)")
+          lines.append("")
+
+          lines.append("## Checkov")
+          if cc:
+            lines.append(f"- failed: {cc['failed']}")
+            lines.append(f"- passed: {cc['passed']}")
+            lines.append(f"- skipped: {cc['skipped']}")
+          else:
+            lines.append("- (не удалось распарсить отчёт)")
+          lines.append("")
+
+          lines.append("## Trivy")
+          if tc:
+            lines.append(f"- CRITICAL: {tc.get('CRITICAL', 0)}")
+            lines.append(f"- HIGH: {tc.get('HIGH', 0)}")
+            lines.append(f"- MEDIUM: {tc.get('MEDIUM', 0)}")
+            lines.append(f"- LOW: {tc.get('LOW', 0)}")
+            lines.append(f"- UNKNOWN: {tc.get('UNKNOWN', 0)}")
+          else:
+            lines.append("- (не удалось распарсить отчёт)")
+          lines.append("")
+          lines.append("## Actions / decisions")
+          lines.append("- [ ] Разобрать 1–2 HIGH/CRITICAL из Trivy и: (а) обновить base image/зависимость, либо (б) задокументировать принятие риска и срок пересмотра.")
+          lines.append("- [ ] Разобрать хотя бы одну находку Checkov: исправить в IaC либо оформить как backlog (с причиной).")
+          lines.append("- [ ] Проработать хотя бы одно предупреждение Hadolint: фикс Dockerfile или обоснованный ignore в `security/hadolint.yaml`.")
+          lines.append("")
+
+          out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload P12 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P12_EVIDENCE
+          path: EVIDENCE/P12
+          retention-days: 30

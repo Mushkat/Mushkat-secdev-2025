@@ -1,0 +1,5 @@
+quiet: true
+download-external-modules: false
+framework:
+  - kubernetes
+skip-check: []

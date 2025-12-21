@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: parking-slots-api
+  labels:
+    app: parking-slots-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: parking-slots-api
+  template:
+    metadata:
+      labels:
+        app: parking-slots-api
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: parking-slots-api:local
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              value: "sqlite:////data/parking.db"
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
