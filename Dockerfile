@@ -7,7 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 # hadolint ignore=DL3008
 RUN apt-get update \
-    && apt-get upgrade -y \
     && apt-get install --no-install-recommends -y build-essential \
     && rm -rf /var/lib/apt/lists/*
 RUN python -m venv ${VENV_PATH}
