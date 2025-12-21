@@ -63,7 +63,8 @@ def main():
                     return False
 
                 conn.execute(
-                    "INSERT INTO bookings(slot_id, user_id, booking_date, status) VALUES (?, ?, ?, 'pending')",
+                    "INSERT INTO bookings(slot_id, user_id, booking_date, status) "
+                    "VALUES (?, ?, ?, 'pending')",
                     (slot_id, user_id, booking_date),
                 )
                 conn.execute("COMMIT;")
@@ -94,7 +95,8 @@ def main():
                 ("test-jti-1", "2099-01-01 00:00:00"),
             )
             is_revoked = conn.execute(
-                "SELECT 1 FROM revoked_tokens WHERE jti=? AND expires_at > CURRENT_TIMESTAMP LIMIT 1",
+                "SELECT 1 FROM revoked_tokens WHERE jti=? "
+                "AND expires_at > CURRENT_TIMESTAMP LIMIT 1",
                 ("test-jti-1",),
             ).fetchone()
         print("Token revoked check (should be True):", bool(is_revoked))
