@@ -1,0 +1,223 @@
+name: Security - IaC & Container (P12)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - "iac/**"
+      - "security/**"
+      - ".github/workflows/ci-p12-iac-container.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  p12:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare evidence directory
+        run: |
+          mkdir -p EVIDENCE/P12
+          echo "[]" > EVIDENCE/P12/hadolint_report.json
+          echo "{}" > EVIDENCE/P12/checkov_report.json
+          echo "{}" > EVIDENCE/P12/trivy_report.json
+
+      - name: Hadolint (Dockerfile -> JSON)
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/work" -w /work \
+            hadolint/hadolint:v2.14.0 \
+            hadolint --config security/hadolint.yaml --format json Dockerfile \
+            > EVIDENCE/P12/hadolint_report.json || true
+
+      - name: Checkov (IaC -> JSON)
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/work" -w /work \
+            bridgecrew/checkov:3.2.484 \
+            --config-file security/checkov.yaml \
+            -d iac \
+            -o json \
+            > EVIDENCE/P12/checkov_report.json || true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver: docker-container
+
+      - name: Build runtime image (local)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          target: runtime
+          tags: parking-slots-api:p12
+          load: true
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trivy scan (image -> JSON)
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: parking-slots-api:p12
+          format: json
+          output: EVIDENCE/P12/trivy_report.json
+          vuln-type: os,library
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          ignore-unfixed: false
+          exit-code: "0"
+
+      - name: Generate hardening summary
+        run: |
+          python - << 'PY'
+          import json
+          import os
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          ev = Path("EVIDENCE/P12")
+          ev.mkdir(parents=True, exist_ok=True)
+
+          def read_json(path: Path, default):
+            if not path.exists():
+              path.write_text(json.dumps(default, ensure_ascii=False), encoding="utf-8")
+              return default
+            try:
+              return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+              path.write_text(json.dumps(default, ensure_ascii=False), encoding="utf-8")
+              return default
+
+          hadolint = read_json(ev / "hadolint_report.json", [])
+          checkov = read_json(ev / "checkov_report.json", {})
+          trivy = read_json(ev / "trivy_report.json", {})
+
+          def hadolint_counts(doc):
+            if not isinstance(doc, list):
+              return {"findings": None}
+            levels = {}
+            for it in doc:
+              lvl = it.get("level", "unknown")
+              levels[lvl] = levels.get(lvl, 0) + 1
+            return {"findings": len(doc), "levels": levels}
+
+          def checkov_counts(doc):
+            if not isinstance(doc, dict):
+              return {"failed": None, "passed": None, "skipped": None}
+            res = doc.get("results", {}) or {}
+            failed = res.get("failed_checks", []) or []
+            passed = res.get("passed_checks", []) or []
+            skipped = res.get("skipped_checks", []) or []
+            return {"failed": len(failed), "passed": len(passed), "skipped": len(skipped)}
+
+          def trivy_counts(doc):
+            counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0, "UNKNOWN": 0}
+            if not isinstance(doc, dict):
+              return counts, []
+            results = doc.get("Results", []) or []
+            top = []
+            for r in results:
+              for v in (r.get("Vulnerabilities") or []):
+                sev = (v.get("Severity") or "UNKNOWN").upper()
+                counts[sev] = counts.get(sev, 0) + 1
+                if sev in ("CRITICAL", "HIGH") and len(top) < 8:
+                  top.append({
+                    "VulnerabilityID": v.get("VulnerabilityID"),
+                    "PkgName": v.get("PkgName"),
+                    "InstalledVersion": v.get("InstalledVersion"),
+                    "FixedVersion": v.get("FixedVersion"),
+                    "Severity": sev,
+                  })
+            return counts, top
+
+          hc = hadolint_counts(hadolint)
+          cc = checkov_counts(checkov)
+          tc, top_vulns = trivy_counts(trivy)
+
+          sha = os.environ.get("GITHUB_SHA", "")
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
+          run_url = f"https://github.com/{repo}/actions/runs/{run_id}" if repo and run_id else ""
+          now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+          lines = []
+          lines.append("# P12 Hardening summary")
+          lines.append("")
+          lines.append(f"- Commit: `{sha}`")
+          if run_url:
+            lines.append(f"- Run: {run_url}")
+          lines.append(f"- Generated: {now}")
+          lines.append("")
+          lines.append("## Evidence files")
+          lines.append("- `EVIDENCE/P12/hadolint_report.json`")
+          lines.append("- `EVIDENCE/P12/checkov_report.json`")
+          lines.append("- `EVIDENCE/P12/trivy_report.json`")
+          lines.append("")
+
+          hadolint_path = ev / "hadolint_report.json"
+          hadolint = read_json(hadolint_path, [])
+
+          lines.append("## Hadolint")
+          if isinstance(hadolint, list):
+              lines.append(f"- findings: {len(hadolint)}")
+              if len(hadolint) == 0:
+                  lines.append("- (ok) Dockerfile без замечаний Hadolint")
+          else:
+              lines.append("- (ошибка) hadolint_report.json должен быть list")
+          lines.append("")
+
+          lines.append("## Checkov")
+          if cc["failed"] is None:
+            lines.append("- (ошибка) отчёт не в формате dict")
+          else:
+            lines.append(f"- failed: {cc['failed']}")
+            lines.append(f"- passed: {cc['passed']}")
+            lines.append(f"- skipped: {cc['skipped']}")
+          lines.append("")
+
+          lines.append("## Trivy")
+          lines.append(f"- CRITICAL: {tc.get('CRITICAL', 0)}")
+          lines.append(f"- HIGH: {tc.get('HIGH', 0)}")
+          lines.append(f"- MEDIUM: {tc.get('MEDIUM', 0)}")
+          lines.append(f"- LOW: {tc.get('LOW', 0)}")
+          lines.append(f"- UNKNOWN: {tc.get('UNKNOWN', 0)}")
+          lines.append("")
+
+          if top_vulns:
+            lines.append("## Top CRITICAL/HIGH (sample)")
+            for v in top_vulns:
+              lines.append(
+                f"- {v['Severity']}: {v['VulnerabilityID']} | {v['PkgName']} "
+                f"{v['InstalledVersion']} -> {v.get('FixedVersion') or '-'}"
+              )
+            lines.append("")
+
+          lines.append("## Actions / decisions (for ★★)")
+          lines.append("- [ ] Hadolint: проработать минимум 1 правило (фикс Dockerfile или осознанный ignore в `security/hadolint.yaml` с причиной).")
+          lines.append("- [ ] Checkov: закрыть минимум 1 failed-check правкой IaC или документированным решением (backlog + причина).")
+          lines.append("- [ ] Trivy: разобрать 1–2 HIGH/CRITICAL (фикс обновлением base/пакетов/зависимостей или принятие риска + план пересмотра).")
+          lines.append("")
+
+          (ev / "hardening_summary.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+      - name: Upload P12 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: P12_EVIDENCE
+          path: EVIDENCE/P12
+          retention-days: 30

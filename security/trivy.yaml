@@ -1,0 +1,11 @@
+format: json
+vulnerability:
+  type:
+    - os
+    - library
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+  - LOW
+ignoreUnfixed: false
